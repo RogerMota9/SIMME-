@@ -1,0 +1,4 @@
+import { NextResponse } from 'next/server'
+import { errorResponse, ApiError } from '@/lib/server/auth'
+import { query } from '@/lib/server/db'
+export async function GET(request:Request){try{const period=new URL(request.url).searchParams.get('periodo')??'30';const days=period==='todos'?null:Number(period);if(days!==null&&(!Number.isInteger(days)||days<1||days>3650))throw new ApiError('Período inválido.');const r=await query(`SELECT l.student_name AS alunoNome,l.course AS curso,l.class_group AS turma,l.school_year AS serie,COUNT(*) AS total FROM loans l JOIN materials m ON m.id=l.material_id WHERE m.type='livro' AND l.returned AND l.review_confirmed ${days===null?'':`AND l.loaned_at >= DATE_SUB(NOW(), INTERVAL $1 DAY)`} GROUP BY l.student_name,l.course,l.class_group,l.school_year ORDER BY total DESC, alunoNome ASC`,days===null?[]:[days]);return NextResponse.json(r.rows)}catch(error){return errorResponse(error)}}

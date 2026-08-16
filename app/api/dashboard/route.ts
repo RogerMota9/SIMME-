@@ -1,0 +1,4 @@
+import { NextResponse } from 'next/server'
+import { errorResponse } from '@/lib/server/auth'
+import { query } from '@/lib/server/db'
+export async function GET(){try{const r=await query(`SELECT (SELECT COUNT(*) FROM materials) AS totalItens,(SELECT COUNT(*) FROM loans WHERE NOT returned) AS ativos,(SELECT COUNT(*) FROM loans l JOIN materials m ON m.id=l.material_id WHERE NOT l.returned AND m.type='livro' AND l.due_at<NOW()) AS atrasados,(SELECT COALESCE(SUM(GREATEST(0,TIMESTAMPDIFF(DAY,l.due_at,NOW()))*0.5),0) FROM loans l JOIN materials m ON m.id=l.material_id WHERE NOT l.returned AND m.type='livro') AS multas,(SELECT COUNT(*) FROM reviews) AS resenhas,(SELECT COUNT(*) FROM materials WHERE type='livro') AS livros,(SELECT COUNT(*) FROM materials WHERE type='instrumento') AS instrumentos,(SELECT COUNT(*) FROM materials WHERE type='jogo') AS jogos`);return NextResponse.json(r.rows[0])}catch(error){return errorResponse(error)}}
